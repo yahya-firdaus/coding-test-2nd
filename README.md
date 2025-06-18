@@ -327,3 +327,38 @@ Your system should be able to handle questions like these about the financial st
 ---
 
 **Build a smarter document Q&A system with RAG technology!** 
+
+---
+
+## Screenshot Results
+
+Berikut adalah penjelasan hasil running project berdasarkan screenshot yang tersedia:
+
+### Screenshot 1: `Screenshot 2025-06-18 181021 001.png`
+- **Deskripsi**: Menampilkan halaman utama aplikasi RAG-based Financial Statement Q&A System
+- **Fitur yang terlihat**: Interface chat yang user-friendly dengan area untuk mengajukan pertanyaan tentang dokumen laporan keuangan
+- **Status**: Aplikasi berhasil berjalan dan siap menerima pertanyaan dari pengguna
+
+### Screenshot 2: `Screenshot 2025-06-18 181134 002.png`
+- **Deskripsi**: Menampilkan proses upload dan processing dokumen PDF
+- **Fitur yang terlihat**: Sistem berhasil memproses file `FinancialStatement_2025_I_AADIpdf.pdf` dan melakukan vectorization
+- **Status**: Dokumen berhasil di-upload dan diproses untuk RAG pipeline
+
+### Screenshot 3: `Screenshot 2025-06-18 181208 003.png`
+- **Deskripsi**: Menampilkan hasil Q&A dengan pertanyaan tentang laporan keuangan
+- **Fitur yang terlihat**: Sistem memberikan jawaban berdasarkan dokumen yang diproses dengan menampilkan sumber referensi
+- **Status**: RAG pipeline berfungsi dengan baik dalam memberikan jawaban yang akurat
+
+### Screenshot 4: `Screenshot 2025-06-18 181254 004.png`
+- **Deskripsi**: Menampilkan interface chat yang lengkap dengan riwayat percakapan
+- **Fitur yang terlihat**: Multiple Q&A interactions dengan source citations dan loading states
+- **Status**: Sistem chat berjalan lancar dengan fitur real-time Q&A dan source tracking
+
+### Kesimpulan Running Project
+✅ **Backend FastAPI**: Berhasil berjalan di port 8000 dengan semua endpoint berfungsi  
+✅ **Frontend Next.js**: Interface responsive dan user-friendly  
+✅ **RAG Pipeline**: PDF processing, vectorization, dan Q&A generation berjalan optimal  
+✅ **Vector Database**: Penyimpanan dan retrieval dokumen berfungsi dengan baik  
+✅ **Real-time Chat**: Sistem chat dengan source citations berjalan lancar  
+
+Project ini telah berhasil mengimplementasikan sistem RAG-based Q&A untuk dokumen laporan keuangan dengan teknologi modern dan user experience yang baik. 

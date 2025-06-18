@@ -1,73 +1,160 @@
 import React, { useState } from 'react';
 
-interface FileUploadProps {
-  onUploadComplete?: (result: any) => void;
-  onUploadError?: (error: string) => void;
+interface FileStatus {
+  file: File;
+  status: 'pending' | 'uploading' | 'success' | 'failed';
+  message: string;
 }
 
-export default function FileUpload({ onUploadComplete, onUploadError }: FileUploadProps) {
-  const [file, setFile] = useState<File | null>(null);
+const FileUpload: React.FC = () => {
+  const [files, setFiles] = useState<FileStatus[]>([]);
   const [isUploading, setIsUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
+  const [globalMessage, setGlobalMessage] = useState<string>('');
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    // TODO: Implement file selection
-    // 1. Validate file type (PDF only)
-    // 2. Validate file size
-    // 3. Set selected file
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      const selectedFilesArray = Array.from(e.target.files);
+      const newFiles: FileStatus[] = selectedFilesArray.map(file => {
+        if (file.type === 'application/pdf') {
+          return { file, status: 'pending', message: '' };
+        } else {
+          return { file, status: 'failed', message: 'Not a PDF file' };
+        }
+      });
+      setFiles(prevFiles => [...prevFiles, ...newFiles.filter(f => f.status !== 'failed')]);
+      const failedFiles = newFiles.filter(f => f.status === 'failed');
+      if (failedFiles.length > 0) {
+        setGlobalMessage(`Skipped ${failedFiles.length} non-PDF files.`);
+      } else {
+        setGlobalMessage('');
+      }
+    }
+  };
+
+  const handleRemoveFile = (indexToRemove: number) => {
+    setFiles(prevFiles => prevFiles.filter((_, index) => index !== indexToRemove));
   };
 
   const handleUpload = async () => {
-    // TODO: Implement file upload
-    // 1. Create FormData with selected file
-    // 2. Send POST request to /api/upload
-    // 3. Handle upload progress
-    // 4. Handle success/error responses
-  };
+    if (files.length === 0) {
+      setGlobalMessage('Please select files first.');
+      return;
+    }
 
-  const handleDragOver = (e: React.DragEvent) => {
-    // TODO: Handle drag over events
-  };
+    setIsUploading(true);
+    setGlobalMessage('Uploading files...');
 
-  const handleDrop = (e: React.DragEvent) => {
-    // TODO: Handle file drop events
+    const formData = new FormData();
+    files.forEach(fileStatus => {
+      if (fileStatus.status === 'pending') {
+        formData.append('files', fileStatus.file);
+      }
+    });
+
+    if (formData.getAll('files').length === 0) {
+      setGlobalMessage('No pending files to upload.');
+      setIsUploading(false);
+      return;
+    }
+
+    setFiles(prevFiles => 
+      prevFiles.map(fs => 
+        fs.status === 'pending' ? { ...fs, status: 'uploading', message: 'Uploading...' } : fs
+      )
+    );
+
+    try {
+      const response = await fetch('http://localhost:8000/api/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        setFiles(prevFiles => 
+          prevFiles.map(fs => {
+            const uploadedFile = result.find((res: any) => res.filename === fs.file.name);
+            if (uploadedFile) {
+              if (uploadedFile.status === 'failed') {
+                return { ...fs, status: 'failed', message: `Error: ${uploadedFile.error}` };
+              } else {
+                return { ...fs, status: 'success', message: `Processed ${uploadedFile.chunks_count} chunks` };
+              }
+            }
+            return fs;
+          })
+        );
+        setGlobalMessage('All selected files processed.');
+      } else {
+        setGlobalMessage(`Error: ${result.detail || 'Failed to upload files.'}`);
+        setFiles(prevFiles => 
+          prevFiles.map(fs => 
+            fs.status === 'uploading' ? { ...fs, status: 'failed', message: result.detail || 'Upload failed' } : fs
+          )
+        );
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      setGlobalMessage('Network error or server unreachable.');
+      setFiles(prevFiles => 
+        prevFiles.map(fs => 
+          fs.status === 'uploading' ? { ...fs, status: 'failed', message: 'Network error' } : fs
+        )
+      );
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   return (
-    <div className="file-upload">
-      {/* TODO: Implement file upload UI */}
-      
-      {/* Drag & Drop area */}
-      <div 
-        className="upload-area"
-        onDragOver={handleDragOver}
-        onDrop={handleDrop}
-      >
-        {/* TODO: Implement drag & drop UI */}
+    <div className="uploadContainer">
+      <div className="uploadBox">
+        <input
+          type="file"
+          accept=".pdf"
+          multiple
+          onChange={handleFileChange}
+          disabled={isUploading}
+          className="fileInput"
+        />
+        <button
+          onClick={handleUpload}
+          disabled={files.filter(f => f.status === 'pending').length === 0 || isUploading}
+          className="uploadButton"
+        >
+          {isUploading ? 'Uploading...' : 'Upload Selected PDFs'}
+        </button>
       </div>
 
-      {/* File input */}
-      <input
-        type="file"
-        accept=".pdf"
-        onChange={handleFileSelect}
-        style={{ display: 'none' }}
-      />
+      {globalMessage && (
+        <div className="globalStatus">
+          {globalMessage}
+        </div>
+      )}
 
-      {/* Upload button */}
-      <button 
-        onClick={handleUpload}
-        disabled={!file || isUploading}
-      >
-        {isUploading ? 'Uploading...' : 'Upload PDF'}
-      </button>
-
-      {/* Progress bar */}
-      {isUploading && (
-        <div className="progress-bar">
-          {/* TODO: Implement progress bar */}
+      {files.length > 0 && (
+        <div className="fileList">
+          <h3>Selected Files:</h3>
+          <ul>
+            {files.map((fileStatus, index) => (
+              <li key={index} className="fileItem">
+                <span className="fileName">{fileStatus.file.name}</span>
+                <span className={`fileStatus ${fileStatus.status}`}>
+                  {fileStatus.status === 'uploading' ? 'Uploading...' : fileStatus.message || fileStatus.status}
+                </span>
+                {fileStatus.status !== 'uploading' && (
+                  <button onClick={() => handleRemoveFile(index)} className="removeButton">
+                    &times;
+                  </button>
+                )}
+              </li>
+            ))}
+          </ul>
         </div>
       )}
     </div>
   );
-} 
+};
+
+export default FileUpload; 
